@@ -9,6 +9,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.web.multipart.MultipartFile;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.List;
 import java.util.UUID;
 
@@ -25,10 +26,14 @@ public class AlbumController {
     @Autowired
     private SecurityUtils securityUtils;
 
+    @Autowired
+    private ObjectMapper objectMapper;
+
     @PostMapping(consumes = { "multipart/form-data" })
     public ResponseEntity<AlbumResponse> createAlbum(
-            @RequestPart("data") @Valid AlbumCreateRequest createRequest,
-            @RequestPart(value = "coverImage", required = false) MultipartFile coverImage) {
+            @RequestParam("data") String dataJson,
+            @RequestPart(value = "coverImage", required = false) MultipartFile coverImage) throws Exception {
+        AlbumCreateRequest createRequest = objectMapper.readValue(dataJson, AlbumCreateRequest.class);
         UUID photographerId = securityUtils.getCurrentPhotographerId();
         AlbumResponse response = albumService.createAlbum(photographerId, createRequest, coverImage);
         return ResponseEntity.ok(response);
@@ -51,8 +56,10 @@ public class AlbumController {
     @PutMapping(value = "/{albumId}", consumes = { "multipart/form-data" })
     public ResponseEntity<AlbumResponse> updateAlbum(
             @PathVariable UUID albumId,
-            @RequestPart("data") @Valid com.senalbum.album.dto.AlbumUpdateRequest updateRequest,
-            @RequestPart(value = "coverImage", required = false) MultipartFile coverImage) {
+            @RequestParam("data") String dataJson,
+            @RequestPart(value = "coverImage", required = false) MultipartFile coverImage) throws Exception {
+        com.senalbum.album.dto.AlbumUpdateRequest updateRequest = objectMapper.readValue(dataJson,
+                com.senalbum.album.dto.AlbumUpdateRequest.class);
         UUID photographerId = securityUtils.getCurrentPhotographerId();
         AlbumResponse response = albumService.updateAlbum(photographerId, albumId, updateRequest, coverImage);
         return ResponseEntity.ok(response);
