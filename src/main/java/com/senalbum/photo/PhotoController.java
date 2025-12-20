@@ -19,7 +19,6 @@ import java.util.UUID;
  */
 @RestController
 @RequestMapping("/api/albums/{albumId}/photos")
-@CrossOrigin(origins = "http://localhost:4200")
 public class PhotoController {
 
     @Autowired

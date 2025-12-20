@@ -12,7 +12,6 @@ import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/public/files")
-@CrossOrigin(origins = "http://localhost:4200")
 public class PublicFileController {
 
   @Autowired

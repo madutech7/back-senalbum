@@ -26,7 +26,6 @@ import java.util.Map;
  */
 @RestController
 @RequestMapping("/api/public/albums")
-@CrossOrigin(origins = "http://localhost:4200", allowCredentials = "true")
 public class PublicAlbumController {
 
     @Autowired
