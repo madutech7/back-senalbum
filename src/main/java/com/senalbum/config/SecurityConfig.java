@@ -54,6 +54,8 @@ public class SecurityConfig {
                                                 .permitAll()
                                                 .requestMatchers("/api/public/**").permitAll()
                                                 .requestMatchers("/api/admin/**").permitAll()
+                                                .requestMatchers("/api/mobile/**").permitAll()
+                                                .requestMatchers("/api/storage/**").permitAll()
                                                 // Tous les autres endpoints nécessitent une authentification
                                                 .anyRequest().authenticated())
                                 .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class)
