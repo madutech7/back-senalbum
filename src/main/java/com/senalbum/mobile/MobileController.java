@@ -38,6 +38,9 @@ public class MobileController {
   @PostMapping("/mobile/releases")
   public ResponseEntity<MobileRelease> createRelease(@RequestBody MobileRelease release) {
     MobileRelease saved = releaseRepository.save(release);
+    if (saved == null) {
+      return ResponseEntity.internalServerError().build();
+    }
     return ResponseEntity.ok(saved);
   }
 
