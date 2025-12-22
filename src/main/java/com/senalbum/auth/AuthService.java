@@ -74,9 +74,10 @@ public class AuthService {
         try {
             emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
         } catch (Exception e) {
-            // Log error but don't fail registration if mail fails?
-            // Better to fail or provide a resend option later.
-            System.err.println("Failed to send verification email: " + e.getMessage());
+            // Supprimer l'utilisateur s'il n'a pas pu recevoir son code pour qu'il puisse
+            // recommencer
+            photographerRepository.delete(photographer);
+            throw new RuntimeException("Erreur d'envoi d'e-mail : " + e.getMessage());
         }
 
         return AuthResponse.pending(photographer.getEmail());
