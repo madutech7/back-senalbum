@@ -72,7 +72,7 @@ public class Photographer {
     @Column(name = "notify_views")
     private Boolean notifyViews = false;
 
-    @Column(nullable = false)
+    @Column(nullable = false, columnDefinition = "boolean default false")
     private boolean enabled = false;
 
     @Column(name = "verification_code")
