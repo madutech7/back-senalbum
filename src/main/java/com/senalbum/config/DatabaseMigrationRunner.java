@@ -28,6 +28,11 @@ public class DatabaseMigrationRunner implements CommandLineRunner {
       // Ajouter la colonne verification_code_expires_at si elle n'existe pas
       jdbcTemplate.execute("ALTER TABLE photographers ADD COLUMN IF NOT EXISTS verification_code_expires_at TIMESTAMP");
 
+      // Ajouter les colonnes de réinitialisation de mot de passe
+      jdbcTemplate.execute("ALTER TABLE photographers ADD COLUMN IF NOT EXISTS reset_password_code VARCHAR(255)");
+      jdbcTemplate
+          .execute("ALTER TABLE photographers ADD COLUMN IF NOT EXISTS reset_password_code_expires_at TIMESTAMP");
+
       logger.info("Migration de la base de données terminée avec succès.");
     } catch (Exception e) {
       logger.warning("Erreur lors de la migration automatique : " + e.getMessage());

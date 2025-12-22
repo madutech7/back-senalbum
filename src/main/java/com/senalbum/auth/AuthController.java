@@ -1,8 +1,10 @@
 package com.senalbum.auth;
 
 import com.senalbum.auth.dto.AuthResponse;
+import com.senalbum.auth.dto.ForgotPasswordRequest;
 import com.senalbum.auth.dto.LoginRequest;
 import com.senalbum.auth.dto.RegisterRequest;
+import com.senalbum.auth.dto.ResetPasswordRequest;
 import com.senalbum.auth.dto.VerificationRequest;
 import jakarta.validation.Valid;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -43,5 +45,17 @@ public class AuthController {
     public ResponseEntity<AuthResponse> login(@Valid @RequestBody LoginRequest request) {
         AuthResponse response = authService.login(request);
         return ResponseEntity.ok(response);
+    }
+
+    @PostMapping("/forgot-password")
+    public ResponseEntity<?> forgotPassword(@Valid @RequestBody ForgotPasswordRequest request) {
+        authService.sendResetPasswordCode(request);
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/reset-password")
+    public ResponseEntity<?> resetPassword(@Valid @RequestBody ResetPasswordRequest request) {
+        authService.resetPassword(request);
+        return ResponseEntity.ok().build();
     }
 }

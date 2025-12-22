@@ -1,8 +1,10 @@
 package com.senalbum.auth;
 
 import com.senalbum.auth.dto.AuthResponse;
+import com.senalbum.auth.dto.ForgotPasswordRequest;
 import com.senalbum.auth.dto.LoginRequest;
 import com.senalbum.auth.dto.RegisterRequest;
+import com.senalbum.auth.dto.ResetPasswordRequest;
 import com.senalbum.auth.dto.VerificationRequest;
 import com.senalbum.email.EmailService;
 import com.senalbum.photographer.Photographer;
@@ -39,7 +41,7 @@ public class AuthService {
     @Autowired
     private EmailService emailService;
 
-    private static final int VERIFICATION_CODE_EXPIRATION_MINUTES = 15;
+    private static final int VERIFICATION_CODE_EXPIRATION_MINUTES = 5;
 
     public AuthResponse register(RegisterRequest request) {
         if (photographerRepository.existsByEmail(request.getEmail())) {
@@ -118,6 +120,37 @@ public class AuthService {
         photographerRepository.save(photographer);
 
         emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
+    }
+
+    public void sendResetPasswordCode(ForgotPasswordRequest request) {
+        Photographer photographer = photographerRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        String resetCode = generateVerificationCode();
+        photographer.setResetPasswordCode(resetCode);
+        photographer.setResetPasswordCodeExpiresAt(LocalDateTime.now().plusMinutes(15));
+        photographerRepository.save(photographer);
+
+        emailService.sendPasswordResetEmail(photographer.getEmail(), resetCode);
+    }
+
+    public void resetPassword(ResetPasswordRequest request) {
+        Photographer photographer = photographerRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (photographer.getResetPasswordCode() == null
+                || !photographer.getResetPasswordCode().equals(request.getCode())) {
+            throw new RuntimeException("Code de réinitialisation invalide");
+        }
+
+        if (photographer.getResetPasswordCodeExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Code de réinitialisation expiré");
+        }
+
+        photographer.setPassword(passwordEncoder.encode(request.getNewPassword()));
+        photographer.setResetPasswordCode(null);
+        photographer.setResetPasswordCodeExpiresAt(null);
+        photographerRepository.save(photographer);
     }
 
     private String generateVerificationCode() {
