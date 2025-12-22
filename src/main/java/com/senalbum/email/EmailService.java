@@ -6,10 +6,15 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.MimeMessageHelper;
+import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
+
+import java.util.logging.Logger;
 
 @Service
 public class EmailService {
+
+  private static final Logger logger = Logger.getLogger(EmailService.class.getName());
 
   @Autowired
   private JavaMailSender mailSender;
@@ -17,7 +22,14 @@ public class EmailService {
   @Value("${spring.mail.from}")
   private String fromEmail;
 
+  @Async
   public void sendVerificationEmail(String to, String code) {
+    // Log the code for easy development access (visible in Railway logs or
+    // terminal)
+    logger.info("=================================================");
+    logger.info("CONFIRMATION CODE FOR " + to + " : " + code);
+    logger.info("=================================================");
+
     String subject = "Code de confirmation - SenAlbum";
     String content = "<html>"
         + "<body style=\"font-family: Arial, sans-serif; color: #333;\">"

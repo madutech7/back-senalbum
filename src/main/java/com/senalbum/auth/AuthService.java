@@ -70,15 +70,8 @@ public class AuthService {
 
         photographer = photographerRepository.save(photographer);
 
-        // Send email
-        try {
-            emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
-        } catch (Exception e) {
-            // Supprimer l'utilisateur s'il n'a pas pu recevoir son code pour qu'il puisse
-            // recommencer
-            photographerRepository.delete(photographer);
-            throw new RuntimeException("Erreur d'envoi d'e-mail : " + e.getMessage());
-        }
+        // Send email (Async)
+        emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
 
         return AuthResponse.pending(photographer.getEmail());
     }
