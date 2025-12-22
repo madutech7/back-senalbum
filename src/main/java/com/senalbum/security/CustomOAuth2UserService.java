@@ -33,13 +33,17 @@ public class CustomOAuth2UserService extends DefaultOAuth2UserService {
     }
 
     // Check if user exists, otherwise create
-    if (photographerRepository.findByEmailIgnoreCase(email).isEmpty()) {
-      Photographer newUser = new Photographer();
-      newUser.setEmail(email);
-      // Generate random password
-      newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-      photographerRepository.save(newUser);
-    }
+    Photographer photographer = photographerRepository.findByEmailIgnoreCase(email)
+        .orElseGet(() -> {
+          Photographer newUser = new Photographer();
+          newUser.setEmail(email);
+          newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+          return newUser;
+        });
+
+    // Always enable if coming from OAuth2 (Google already verified the email)
+    photographer.setEnabled(true);
+    photographerRepository.save(photographer);
 
     return oAuth2User;
   }

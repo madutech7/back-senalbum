@@ -72,6 +72,15 @@ public class Photographer {
     @Column(name = "notify_views")
     private Boolean notifyViews = false;
 
+    @Column(nullable = false)
+    private boolean enabled = false;
+
+    @Column(name = "verification_code")
+    private String verificationCode;
+
+    @Column(name = "verification_code_expires_at")
+    private LocalDateTime verificationCodeExpiresAt;
+
     @PrePersist
     protected void onCreate() {
         createdAt = LocalDateTime.now();

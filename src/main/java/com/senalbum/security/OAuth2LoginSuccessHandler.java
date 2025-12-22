@@ -24,8 +24,8 @@ public class OAuth2LoginSuccessHandler extends SimpleUrlAuthenticationSuccessHan
   @Autowired
   private PhotographerRepository photographerRepository;
 
-  // Default to localhost:4200 if not set, taking the first valid origin usually
-  private String frontendUrl = "http://localhost:4200";
+  @Value("${app.frontend.url}")
+  private String frontendUrl;
 
   @Override
   public void onAuthenticationSuccess(HttpServletRequest request, HttpServletResponse response,

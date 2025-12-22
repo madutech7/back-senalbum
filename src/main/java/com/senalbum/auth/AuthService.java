@@ -3,6 +3,8 @@ package com.senalbum.auth;
 import com.senalbum.auth.dto.AuthResponse;
 import com.senalbum.auth.dto.LoginRequest;
 import com.senalbum.auth.dto.RegisterRequest;
+import com.senalbum.auth.dto.VerificationRequest;
+import com.senalbum.email.EmailService;
 import com.senalbum.photographer.Photographer;
 import com.senalbum.photographer.PhotographerRepository;
 import com.senalbum.security.JwtUtil;
@@ -12,6 +14,9 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
+
+import java.time.LocalDateTime;
+import java.util.Random;
 
 /**
  * Service d'authentification
@@ -30,6 +35,11 @@ public class AuthService {
 
     @Autowired
     private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private EmailService emailService;
+
+    private static final int VERIFICATION_CODE_EXPIRATION_MINUTES = 15;
 
     public AuthResponse register(RegisterRequest request) {
         if (photographerRepository.existsByEmail(request.getEmail())) {
@@ -51,11 +61,75 @@ public class AuthService {
 
         photographer.setProfilePictureUrl("https://ui-avatars.com/api/?name=" + fullName + "&background=random");
 
+        // Set verification code
+        String verificationCode = generateVerificationCode();
+        photographer.setVerificationCode(verificationCode);
+        photographer
+                .setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRATION_MINUTES));
+        photographer.setEnabled(false);
+
         photographer = photographerRepository.save(photographer);
+
+        // Send email
+        try {
+            emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
+        } catch (Exception e) {
+            // Log error but don't fail registration if mail fails?
+            // Better to fail or provide a resend option later.
+            System.err.println("Failed to send verification email: " + e.getMessage());
+        }
+
+        return AuthResponse.pending(photographer.getEmail());
+    }
+
+    public AuthResponse verifyCode(VerificationRequest request) {
+        Photographer photographer = photographerRepository.findByEmail(request.getEmail())
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (photographer.isEnabled()) {
+            throw new RuntimeException("Compte déjà activé");
+        }
+
+        if (photographer.getVerificationCode() == null
+                || !photographer.getVerificationCode().equals(request.getCode())) {
+            throw new RuntimeException("Code de confirmation invalide");
+        }
+
+        if (photographer.getVerificationCodeExpiresAt().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("Code de confirmation expiré");
+        }
+
+        photographer.setEnabled(true);
+        photographer.setVerificationCode(null);
+        photographer.setVerificationCodeExpiresAt(null);
+        photographerRepository.save(photographer);
 
         String token = jwtUtil.generateToken(photographer.getId(), photographer.getEmail());
         return new AuthResponse(token, photographer.getEmail(), photographer.getFirstName(), photographer.getLastName(),
                 photographer.getProfilePictureUrl());
+    }
+
+    public void resendCode(String email) {
+        Photographer photographer = photographerRepository.findByEmail(email)
+                .orElseThrow(() -> new RuntimeException("Utilisateur non trouvé"));
+
+        if (photographer.isEnabled()) {
+            throw new RuntimeException("Compte déjà activé");
+        }
+
+        String verificationCode = generateVerificationCode();
+        photographer.setVerificationCode(verificationCode);
+        photographer
+                .setVerificationCodeExpiresAt(LocalDateTime.now().plusMinutes(VERIFICATION_CODE_EXPIRATION_MINUTES));
+        photographerRepository.save(photographer);
+
+        emailService.sendVerificationEmail(photographer.getEmail(), verificationCode);
+    }
+
+    private String generateVerificationCode() {
+        Random random = new Random();
+        int code = 100000 + random.nextInt(900000);
+        return String.valueOf(code);
     }
 
     public AuthResponse login(LoginRequest request) {
@@ -64,6 +138,10 @@ public class AuthService {
 
         Photographer photographer = photographerRepository.findByEmail(request.getEmail())
                 .orElseThrow(() -> new RuntimeException("Photographer not found"));
+
+        if (!photographer.isEnabled()) {
+            throw new RuntimeException("Votre compte n'est pas encore activé. Veuillez vérifier votre boîte mail.");
+        }
 
         String token = jwtUtil.generateToken(photographer.getId(), photographer.getEmail());
         return new AuthResponse(token, photographer.getEmail(), photographer.getFirstName(), photographer.getLastName(),

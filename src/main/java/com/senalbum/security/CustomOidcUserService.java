@@ -29,14 +29,20 @@ public class CustomOidcUserService extends OidcUserService {
 
     String email = oidcUser.getAttribute("email");
 
-    if (email != null && photographerRepository.findByEmailIgnoreCase(email).isEmpty()) {
-      Photographer newUser = new Photographer();
-      newUser.setEmail(email);
-      newUser.setFirstName(oidcUser.getAttribute("given_name"));
-      newUser.setLastName(oidcUser.getAttribute("family_name"));
-      newUser.setProfilePictureUrl(oidcUser.getAttribute("picture"));
-      newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
-      photographerRepository.save(newUser);
+    if (email != null) {
+      Photographer photographer = photographerRepository.findByEmailIgnoreCase(email)
+          .orElseGet(() -> {
+            Photographer newUser = new Photographer();
+            newUser.setEmail(email);
+            newUser.setFirstName(oidcUser.getAttribute("given_name"));
+            newUser.setLastName(oidcUser.getAttribute("family_name"));
+            newUser.setProfilePictureUrl(oidcUser.getAttribute("picture"));
+            newUser.setPassword(passwordEncoder.encode(UUID.randomUUID().toString()));
+            return newUser;
+          });
+
+      photographer.setEnabled(true);
+      photographerRepository.save(photographer);
     }
 
     return oidcUser;
