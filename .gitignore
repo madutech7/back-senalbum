@@ -37,3 +37,4 @@ uploads/
 
 ### Configuration ###
 # src/main/resources/application.properties is now safe to commit with env vars
+.env
